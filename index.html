@@ -1024,6 +1024,14 @@
         </div>
 
         <div class="form-group" style="margin-top: 14px;">
+          <label class="form-label" for="select-condition">Condition</label>
+          <select id="select-condition" class="form-select">
+            <option value="new" selected>New Model Y (Factory New)</option>
+            <option value="used">Pre-Owned / Used (Active Stock in Bay Area!)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
           <label class="form-label" for="select-trim">Model Y Trim Filter</label>
           <select id="select-trim" class="form-select">
             <option value="ALL">All Trims (Long Range, Perf, RWD)</option>
@@ -1081,6 +1089,16 @@
       <div class="form-group" style="margin-top: 14px;">
         <label class="form-label" for="input-proxy-url">Custom CORS Proxy URL (Optional)</label>
         <input type="text" id="input-proxy-url" class="form-input" placeholder="https://my-worker.workers.dev?url=%s">
+      </div>
+
+      <div class="form-group" style="margin-top: 14px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+        <label class="form-label">Instant Testing & Alert Simulation</label>
+        <button id="btn-simulate-alert" type="button" class="btn-primary" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); min-height: 44px; font-size: 14px;">
+          🧪 Simulate New Model Y Discovery
+        </button>
+        <div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">
+          Instantly triggers a test Model Y arrival to verify the audio chime, vibration, iOS banner, and ntfy push alert.
+        </div>
       </div>
 
       <div style="margin-top: 20px;">
@@ -1272,6 +1290,7 @@
 
               <div class="target-filters">
                 <span class="filter-tag highlight">${trimLabel}</span>
+                <span class="filter-tag" style="text-transform: capitalize;">${t.condition === 'used' ? 'Pre-Owned' : 'New'}</span>
                 <span class="filter-tag">${priceLabel}</span>
                 <span class="filter-tag" style="color: var(--accent-green);">${t.vehicleCount || 0} in Stock</span>
               </div>
@@ -1461,6 +1480,7 @@
         e.preventDefault();
         const zip = document.getElementById('input-zip').value.trim();
         const range = Number(document.getElementById('input-range').value) || 200;
+        const condition = document.getElementById('select-condition').value;
         const trim = document.getElementById('select-trim').value;
         const maxPrice = document.getElementById('input-max-price').value;
 
@@ -1472,6 +1492,7 @@
         StorageManager.addWatchTarget({
           zip: zip,
           range: range,
+          condition: condition,
           trim: trim,
           maxPrice: maxPrice ? Number(maxPrice) : null
         });
@@ -1565,6 +1586,42 @@
           'Lock-screen push notifications are working on your iPhone!'
         );
         alert(ok ? '✓ Test push sent! Check your phone.' : '✗ Push failed. Check your internet connection.');
+      });
+
+      // Simulate Alert with Mock Car Discovery
+      document.getElementById('btn-simulate-alert').addEventListener('click', async () => {
+        NotificationEngine.initAudio();
+        const testVin = 'SIMULATED_' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        const mockCar = {
+          vin: testVin,
+          model: 'MY',
+          trimName: 'Model Y Long Range All-Wheel Drive',
+          trimCode: 'LRAWD',
+          price: 44990,
+          originalPrice: 47990,
+          discount: 3000,
+          paint: 'Stealth Grey',
+          interior: 'All Black',
+          wheels: '19" Crossflow',
+          location: 'Fremont Delivery Hub, CA',
+          odometer: 15,
+          directUrl: 'https://www.tesla.com/inventory/new/my?zip=94065&range=200'
+        };
+
+        const existing = StorageManager.getLatestVehicles();
+        StorageManager.saveLatestVehicles([mockCar, ...existing]);
+        renderVehicles();
+
+        const settings = StorageManager.getSettings();
+        await NotificationEngine.dispatchAlert({
+          title: '🚗 1 New Model Y Found in 94065!',
+          body: 'Model Y Long Range AWD • $44,990 (Fremont, CA)',
+          url: mockCar.directUrl
+        }, settings);
+
+        newVehiclesBadge.style.display = 'inline';
+        modalSettings.classList.remove('active');
+        alert('🎉 Simulation Triggered!\n\nCheck your notification banner, phone chime, and the new Model Y card added to your list below!');
       });
 
       // Save Settings
