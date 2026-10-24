@@ -1502,25 +1502,53 @@
 
       // Request Notification Permission
       document.getElementById('btn-request-notifications').addEventListener('click', async () => {
+        if (!NotificationEngine.isNotificationSupported()) {
+          alert('📱 Apple iOS Safari Requirement:\n\nApple requires web apps to be added to your Home Screen before notifications can be enabled.\n\n1. Tap the Safari Share button (⎋) at the bottom.\n2. Tap "Add to Home Screen".\n3. Open Tesla Watch from your Home Screen, then tap this button again!');
+          return;
+        }
+
         const perm = await NotificationEngine.requestPermission();
         updateNotificationStatusUI();
         if (perm === 'granted') {
           NotificationEngine.showNotification('Tesla Watcher Enabled', {
             body: 'You will receive notifications when new Model Y cars are found!'
           });
+          alert('✓ Notifications enabled successfully!');
+        } else if (perm === 'denied') {
+          alert('Notifications were blocked. Please check iOS Settings > Safari / Tesla Watch > Notifications.');
         }
       });
 
       function updateNotificationStatusUI() {
         const statusEl = document.getElementById('notification-perm-status');
+        const btnReq = document.getElementById('btn-request-notifications');
+        const isSupported = NotificationEngine.isNotificationSupported();
         const status = NotificationEngine.getPermissionStatus();
-        statusEl.textContent = `iOS Notification Status: ${status.toUpperCase()}`;
-        if (status === 'granted') {
-          statusEl.style.color = 'var(--accent-green)';
-        } else if (status === 'denied') {
-          statusEl.style.color = 'var(--tesla-red)';
+
+        if (!isSupported) {
+          if (!isStandalone) {
+            statusEl.textContent = 'Status: Requires "Add to Home Screen" (iOS Safari rule)';
+            statusEl.style.color = 'var(--accent-amber)';
+            btnReq.textContent = '📲 How to Enable on iPhone (Tap for Steps)';
+          } else {
+            statusEl.textContent = 'Status: Notification API not available on this iOS version (Requires iOS 16.4+)';
+            statusEl.style.color = 'var(--tesla-red)';
+            btnReq.textContent = 'Notifications Unavailable';
+          }
         } else {
-          statusEl.style.color = 'var(--text-dim)';
+          statusEl.textContent = `iOS Notification Status: ${status.toUpperCase()}`;
+          if (status === 'granted') {
+            statusEl.style.color = 'var(--accent-green)';
+            btnReq.textContent = '✓ Notifications Active';
+            btnReq.style.background = 'rgba(16, 185, 129, 0.2)';
+            btnReq.style.color = 'var(--accent-green)';
+          } else if (status === 'denied') {
+            statusEl.style.color = 'var(--tesla-red)';
+            btnReq.textContent = 'Notifications Denied (Check iOS Settings)';
+          } else {
+            statusEl.style.color = 'var(--text-dim)';
+            btnReq.textContent = 'Request iOS Notification Permission';
+          }
         }
       }
 
