@@ -201,3 +201,4 @@ tesla_inventory_detector/
 
 ## 📄 License
 MIT
+# tesla-inventory-detector
