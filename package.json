@@ -1,0 +1,21 @@
+{
+  "name": "tesla-inventory-detector",
+  "version": "1.0.0",
+  "description": "Continuous Tesla Model Y inventory detector with iPhone Safari PWA support, multi-zip tracking, and 24/7 background monitoring",
+  "main": "lib/tesla_api.js",
+  "scripts": {
+    "test": "node tests/run_all.js",
+    "scan:ci": "node scripts/check_inventory_ci.js",
+    "dev": "python3 -m http.server 8080"
+  },
+  "keywords": [
+    "tesla",
+    "inventory",
+    "model-y",
+    "ios-pwa",
+    "safari",
+    "notifications"
+  ],
+  "author": "",
+  "license": "MIT"
+}

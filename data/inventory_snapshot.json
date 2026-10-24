@@ -1,0 +1,17 @@
+{
+  "lastUpdated": 0,
+  "lastUpdatedIso": "",
+  "targets": {
+    "default-target-94065-200": {
+      "zip": "94065",
+      "range": 200,
+      "trim": "ALL",
+      "maxPrice": null,
+      "vins": [],
+      "vehicleCount": 0,
+      "vehicles": [],
+      "lastChecked": 0
+    }
+  },
+  "vehicles": []
+}

@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- 1. Crucial for iOS notch, Dynamic Island, and Home Indicator -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Tesla Model Y Watcher</title>
+
+  <!-- 2. PWA Manifest -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#07090e">
+
+  <!-- 3. iOS Safari PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tesla Watch">
+
+  <!-- 4. iOS Home Screen App Icon -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f172a'/><circle cx='50' cy='50' r='38' fill='none' stroke='%23e82127' stroke-width='5'/><path d='M30 32 Q50 38 70 32 L68 37 Q50 42 32 37 Z' fill='%23e82127'/><path d='M47 38 L47 70 Q50 73 53 70 L53 38 Q50 41 47 38 Z' fill='%23e82127'/><circle cx='50' cy='50' r='5' fill='%23f8fafc'/></svg>">
+
+  <!-- 5. Cache Busting Meta Tags -->
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="pragma" content="no-cache">
+  <meta http-equiv="expires" content="0">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-base: #07090e;
+      --bg-card: #0f172a;
+      --bg-card-hover: #17233d;
+      --bg-input: #151f33;
+      --border-subtle: #1e293b;
+      --border-focus: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --tesla-red: #e82127;
+      --tesla-red-glow: rgba(232, 33, 39, 0.35);
+      --tesla-red-dark: #b81419;
+      --accent-cyan: #38bdf8;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --safe-top: max(env(safe-area-inset-top), 16px);
+      --safe-bottom: max(env(safe-area-inset-bottom), 16px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+      padding-left: max(env(safe-area-inset-left), 16px);
+      padding-right: max(env(safe-area-inset-right), 16px);
+      background-image: 
+        radial-gradient(ellipse at 50% 0%, rgba(232, 33, 39, 0.12) 0%, transparent 60%),
+        radial-gradient(circle at 100% 100%, rgba(56, 189, 248, 0.05) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    .container {
+      max-width: 680px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* iOS Safari Install Banner */
+    .install-banner {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95));
+      border: 1px solid var(--border-subtle);
+      border-left: 4px solid var(--tesla-red);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .install-banner.hidden {
+      display: none !important;
+    }
+
+    /* App Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0 12px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-badge {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1.5px solid var(--tesla-red);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px var(--tesla-red-glow);
+    }
+
+    .logo-badge svg {
+      width: 22px;
+      height: 22px;
+      fill: var(--tesla-red);
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s ease;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.92);
+      border-color: var(--tesla-red);
+    }
+
+    /* Hero Scanner Card */
+    .scanner-card {
+      background: linear-gradient(145deg, #0f172a, #131d33);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scanner-card::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, var(--tesla-red-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .scanner-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--accent-green);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .status-orb {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 10px var(--accent-green);
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    .status-pill.scanning {
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--accent-cyan);
+      border-color: rgba(56, 189, 248, 0.25);
+    }
+
+    .status-pill.scanning .status-orb {
+      background: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-cyan);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .countdown-display {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .countdown-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 38px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: var(--text-main);
+    }
+
+    .countdown-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--tesla-red), #ff4d4d);
+      border-radius: 3px;
+      transition: width 1s linear;
+    }
+
+    .scanner-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--tesla-red), var(--tesla-red-dark));
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 13px 24px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      flex: 1;
+      box-shadow: 0 4px 14px var(--tesla-red-glow);
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:active {
+      transform: scale(0.97);
+      box-shadow: 0 2px 8px var(--tesla-red-glow);
+    }
+
+    .interval-selector {
+      display: flex;
+      align-items: center;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      min-height: 48px;
+    }
+
+    .interval-option {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      min-height: 40px;
+      transition: all 0.2s ease;
+    }
+
+    .interval-option.active {
+      background: #1e293b;
+      color: var(--text-main);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Section Cards */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      margin-bottom: 6px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-count {
+      background: #1e293b;
+      color: var(--accent-cyan);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .btn-text {
+      background: none;
+      border: none;
+      color: var(--tesla-red);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-height: 44px;
+      padding: 0 8px;
+    }
+
+    /* Target Cards */
+    .targets-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .target-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .target-card.disabled {
+      opacity: 0.6;
+      border-style: dashed;
+    }
+
+    .target-main-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .target-zip-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .zip-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(232, 33, 39, 0.12);
+      border: 1px solid rgba(232, 33, 39, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .zip-text {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .range-text {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .target-filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-tag {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .filter-tag.highlight {
+      color: var(--accent-cyan);
+      border-color: rgba(56, 189, 248, 0.3);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .target-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 12px;
+      margin-top: 4px;
+    }
+
+    .target-link-btn {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 44px;
+    }
+
+    .target-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 28px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #334155;
+      transition: .3s;
+      border-radius: 28px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--accent-green);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Background Service Info Box */
+    .bg-info-box {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      display: flex;
+      gap: 12px;
+    }
+
+    .bg-info-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .bg-info-box strong {
+      color: var(--text-main);
+    }
+
+    /* Vehicle Cards */
+    .vehicles-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .vehicle-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .vehicle-card.is-new {
+      border: 1.5px solid var(--accent-green);
+      background: linear-gradient(145deg, #0f1d2c, #0f172a);
+    }
+
+    .new-arrival-tag {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: var(--accent-green);
+      color: #07090e;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    .vehicle-header {
+      padding-right: 70px;
+    }
+
+    .vehicle-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .vehicle-price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .vehicle-price {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .vehicle-discount {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent-green);
+      background: rgba(16, 185, 129, 0.15);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .vehicle-specs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+    }
+
+    .spec-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .spec-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .spec-value {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .vehicle-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-reserve {
+      background: linear-gradient(135deg, var(--tesla-red), var(--tesla-red-dark));
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 12px 18px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex: 1;
+      min-height: 44px;
+      box-shadow: 0 2px 10px var(--tesla-red-glow);
+    }
+
+    .empty-state {
+      background: var(--bg-card);
+      border: 1px dashed var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 36px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .empty-radar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(232, 33, 39, 0.08);
+      border: 1px solid rgba(232, 33, 39, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      position: relative;
+    }
+
+    .empty-radar::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid var(--tesla-red);
+      animation: radar-ping 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+    }
+
+    @keyframes radar-ping {
+      0% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+
+    /* Modal Sheet */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-sheet {
+      background: #0f172a;
+      border: 1px solid var(--border-subtle);
+      border-radius: 24px 24px 0 0;
+      width: 100%;
+      max-width: 600px;
+      padding: 24px;
+      padding-bottom: max(env(safe-area-inset-bottom), 24px);
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .modal-overlay.active .modal-sheet {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .form-input, .form-select {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-family: inherit;
+      min-height: 48px;
+      outline: none;
+    }
+
+    .form-input:focus, .form-select:focus {
+      border-color: var(--border-focus);
+    }
+
+    .pill-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .pill-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 10px 4px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      min-height: 44px;
+    }
+
+    .pill-btn.active {
+      background: #1e293b;
+      color: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+    }
+
+    /* Logs view */
+    .logs-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      max-height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      color: var(--text-muted);
+    }
+
+    .log-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      padding-bottom: 4px;
+    }
+
+    .log-row.has-new {
+      color: var(--accent-green);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- Safari Install Banner (Auto-hidden in standalone mode) -->
+    <div id="install-banner" class="install-banner">
+      <div>
+        <strong>📲 Add to iPhone Home Screen:</strong><br>
+        Tap Safari <strong>Share</strong> (⎋) below & select <strong>"Add to Home Screen"</strong> for full-screen PWA mode & notifications.
+      </div>
+      <button class="btn-text" id="btn-dismiss-install" style="color: var(--text-muted);">✕</button>
+    </div>
+
+    <!-- App Header -->
+    <header>
+      <div class="brand">
+        <div class="logo-badge">
+          <!-- Tesla 'T' vector badge -->
+          <svg viewBox="0 0 100 100">
+            <path d="M15 28 Q50 35 85 28 L82 34 Q50 40 18 34 Z"/>
+            <path d="M46 38 L46 75 Q50 78 54 75 L54 38 Q50 41 46 38 Z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">TESLA WATCH</h1>
+          <div class="brand-subtitle">Model Y Real-time Inventory Detector</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-test-sound" class="icon-btn" title="Test Alert Chime" aria-label="Test Alert Chime">
+          🔔
+        </button>
+        <button id="btn-open-settings" class="icon-btn" title="Settings" aria-label="Settings">
+          ⚙️
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Scanner Hero Card -->
+    <section class="scanner-card">
+      <div class="scanner-header">
+        <div id="status-pill" class="status-pill">
+          <span class="status-orb"></span>
+          <span id="status-text">Active Monitoring</span>
+        </div>
+        <div id="last-checked-label" style="font-size: 12px; color: var(--text-dim); font-weight: 500;">
+          Last checked: Never
+        </div>
+      </div>
+
+      <div class="countdown-display">
+        <div id="countdown-timer" class="countdown-number">05:00</div>
+        <div class="countdown-label">Until Next Scan</div>
+      </div>
+
+      <div class="progress-bar-container">
+        <div id="scan-progress" class="progress-bar"></div>
+      </div>
+
+      <div class="scanner-controls">
+        <button id="btn-check-now" class="btn-primary">
+          <span>⚡ Check Now</span>
+        </button>
+
+        <div class="interval-selector">
+          <button class="interval-option" data-mins="1">1m</button>
+          <button class="interval-option" data-mins="2">2m</button>
+          <button class="interval-option active" data-mins="5">5m</button>
+          <button class="interval-option" data-mins="10">10m</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Background Protection Banner -->
+    <div class="bg-info-box">
+      <div class="bg-info-icon">🛡️</div>
+      <div>
+        <strong>24/7 Background Detection:</strong>
+        When Safari on iPhone is closed or locked, GitHub Actions runs scheduled scans in the cloud every 10 min and updates your inventory snapshot.
+        <a href="#settings" id="link-setup-push" style="color: var(--accent-cyan); text-decoration: none; font-weight: 600;">Setup iPhone Lock-Screen Push →</a>
+      </div>
+    </div>
+
+    <!-- Watch Targets Section -->
+    <section>
+      <div class="section-header">
+        <div class="section-title">
+          <span>Watching Locations</span>
+          <span id="targets-count" class="badge-count">1</span>
+        </div>
+        <button id="btn-open-add-target" class="btn-text">
+          <span>＋ Add Location</span>
+        </button>
+      </div>
+
+      <div id="targets-container" class="targets-list">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- Discovered Inventory Section -->
+    <section>
+      <div class="section-header">
+        <div class="section-title">
+          <span>Available Model Y</span>
+          <span id="vehicles-count" class="badge-count">0</span>
+        </div>
+        <span id="new-vehicles-badge" style="display: none; font-size: 12px; font-weight: 700; color: var(--accent-green);">
+          ✨ New Arrivals Found!
+        </span>
+      </div>
+
+      <div id="vehicles-container" class="vehicles-list">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- Recent Activity Log (Collapsible) -->
+    <section>
+      <div class="section-header">
+        <div class="section-title" style="font-size: 14px; color: var(--text-muted);">
+          <span>Activity Log</span>
+        </div>
+        <button id="btn-clear-logs" class="btn-text" style="font-size: 12px; color: var(--text-dim);">
+          Clear
+        </button>
+      </div>
+      <div id="logs-container" class="logs-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Add Watch Target Modal Sheet -->
+  <div id="modal-add-target" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2 class="modal-title">Add Search Location</h2>
+        <button id="btn-close-target-modal" class="btn-text" style="color: var(--text-muted); font-size: 20px;">✕</button>
+      </div>
+
+      <form id="form-add-target" onsubmit="return false;">
+        <div class="form-group">
+          <label class="form-label" for="input-zip">ZIP Code (5 Digits)</label>
+          <input type="text" id="input-zip" class="form-input" placeholder="e.g. 94065" maxlength="5" inputmode="numeric" pattern="[0-9]*" required>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label class="form-label">Search Radius (Miles)</label>
+          <div class="pill-grid" id="radius-pills">
+            <button type="button" class="pill-btn" data-range="25">25 mi</button>
+            <button type="button" class="pill-btn" data-range="50">50 mi</button>
+            <button type="button" class="pill-btn" data-range="100">100 mi</button>
+            <button type="button" class="pill-btn active" data-range="200">200 mi</button>
+          </div>
+          <input type="hidden" id="input-range" value="200">
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label class="form-label" for="select-trim">Model Y Trim Filter</label>
+          <select id="select-trim" class="form-select">
+            <option value="ALL">All Trims (Long Range, Perf, RWD)</option>
+            <option value="LRAWD">Long Range All-Wheel Drive</option>
+            <option value="PERFORMANCE">Performance</option>
+            <option value="RWD">Rear-Wheel Drive (Standard)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label class="form-label" for="input-max-price">Max Price ($ USD, Optional)</label>
+          <input type="number" id="input-max-price" class="form-input" placeholder="e.g. 52000" min="20000" step="500">
+        </div>
+
+        <div style="margin-top: 20px;">
+          <button type="submit" id="btn-save-target" class="btn-primary" style="width: 100%;">
+            Start Watching This Location
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Settings Modal Sheet -->
+  <div id="modal-settings" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2 class="modal-title">Settings & Notifications</h2>
+        <button id="btn-close-settings-modal" class="btn-text" style="color: var(--text-muted); font-size: 20px;">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">iOS Web Notifications</label>
+        <button id="btn-request-notifications" class="btn-primary" style="min-height: 44px; font-size: 14px;">
+          Request iOS Notification Permission
+        </button>
+        <div id="notification-perm-status" style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">
+          Status: Default
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 14px;">
+        <label class="form-label" for="input-ntfy-topic">
+          iPhone Lock-Screen Push (ntfy.sh Topic)
+        </label>
+        <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 6px;">
+          Allows receiving push alerts even when iPhone is locked in your pocket. Enter any private channel name:
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="input-ntfy-topic" class="form-input" placeholder="e.g. my-tesla-94065-alerts" style="flex: 1;">
+          <button id="btn-test-push" class="icon-btn" title="Send Test Push">🚀</button>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 14px;">
+        <label class="form-label" for="input-proxy-url">Custom CORS Proxy URL (Optional)</label>
+        <input type="text" id="input-proxy-url" class="form-input" placeholder="https://my-worker.workers.dev?url=%s">
+      </div>
+
+      <div style="margin-top: 20px;">
+        <button id="btn-save-settings" class="btn-primary" style="width: 100%;">
+          Save Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Core Libraries -->
+  <script src="./lib/tesla_api.js"></script>
+  <script src="./lib/storage.js"></script>
+  <script src="./lib/notifications.js"></script>
+  <script src="./lib/scanner.js"></script>
+
+  <!-- Application Controller -->
+  <script>
+    (function () {
+      'use strict';
+
+      // 1. Standalone iOS PWA detection
+      const isStandalone = window.navigator.standalone === true ||
+        window.matchMedia('(display-mode: standalone)').matches;
+
+      const installBanner = document.getElementById('install-banner');
+      if (isStandalone && installBanner) {
+        installBanner.classList.add('hidden');
+      }
+
+      document.getElementById('btn-dismiss-install').addEventListener('click', () => {
+        installBanner.classList.add('hidden');
+      });
+
+      // 2. Service Worker Registration
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('[PWA] SW registered with scope:', reg.scope))
+            .catch(err => console.warn('[PWA] SW registration failed:', err));
+        });
+      }
+
+      // App State
+      let countdownSeconds = 300;
+      let totalIntervalSeconds = 300;
+      let countdownTimerId = null;
+      let isScanning = false;
+
+      // DOM Elements
+      const countdownTimerEl = document.getElementById('countdown-timer');
+      const scanProgressEl = document.getElementById('scan-progress');
+      const btnCheckNow = document.getElementById('btn-check-now');
+      const statusPill = document.getElementById('status-pill');
+      const statusText = document.getElementById('status-text');
+      const lastCheckedLabel = document.getElementById('last-checked-label');
+      const targetsContainer = document.getElementById('targets-container');
+      const targetsCountEl = document.getElementById('targets-count');
+      const vehiclesContainer = document.getElementById('vehicles-container');
+      const vehiclesCountEl = document.getElementById('vehicles-count');
+      const newVehiclesBadge = document.getElementById('new-vehicles-badge');
+      const logsContainer = document.getElementById('logs-container');
+
+      // Modals
+      const modalAddTarget = document.getElementById('modal-add-target');
+      const modalSettings = document.getElementById('modal-settings');
+      const btnOpenAddTarget = document.getElementById('btn-open-add-target');
+      const btnCloseTargetModal = document.getElementById('btn-close-target-modal');
+      const btnOpenSettings = document.getElementById('btn-open-settings');
+      const btnCloseSettingsModal = document.getElementById('btn-close-settings-modal');
+
+      // Initialize UI
+      function init() {
+        const settings = StorageManager.getSettings();
+        totalIntervalSeconds = (settings.pollIntervalMinutes || 5) * 60;
+        countdownSeconds = totalIntervalSeconds;
+
+        updateIntervalSelectorUI(settings.pollIntervalMinutes || 5);
+        renderTargets();
+        renderVehicles();
+        renderLogs();
+        updateNotificationStatusUI();
+
+        // Start countdown
+        startCountdown();
+
+        // Initial scan on load
+        triggerScan();
+      }
+
+      // Countdown Timer
+      function startCountdown() {
+        if (countdownTimerId) clearInterval(countdownTimerId);
+
+        countdownTimerId = setInterval(() => {
+          if (isScanning) return;
+
+          countdownSeconds--;
+          if (countdownSeconds <= 0) {
+            countdownSeconds = totalIntervalSeconds;
+            triggerScan();
+          }
+          updateCountdownUI();
+        }, 1000);
+      }
+
+      function updateCountdownUI() {
+        const mins = Math.floor(countdownSeconds / 60);
+        const secs = countdownSeconds % 60;
+        countdownTimerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+        const progressPercent = (countdownSeconds / totalIntervalSeconds) * 100;
+        scanProgressEl.style.width = `${progressPercent}%`;
+      }
+
+      // Execute Inventory Scan
+      async function triggerScan() {
+        if (isScanning) return;
+        isScanning = true;
+
+        statusPill.classList.add('scanning');
+        statusText.textContent = 'Scanning Tesla...';
+        btnCheckNow.disabled = true;
+        btnCheckNow.innerHTML = '<span>⏳ Scanning...</span>';
+
+        try {
+          const results = await ScannerEngine.scanAllTargets();
+          lastCheckedLabel.textContent = `Last checked: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+
+          renderTargets();
+          renderVehicles();
+          renderLogs();
+
+          const anyNew = results.some(r => r.alerted || (r.diff && r.diff.hasNew));
+          if (anyNew) {
+            newVehiclesBadge.style.display = 'inline';
+          }
+        } catch (err) {
+          console.error('[App] Scan error:', err);
+        } finally {
+          isScanning = false;
+          statusPill.classList.remove('scanning');
+          statusText.textContent = 'Active Monitoring';
+          btnCheckNow.disabled = false;
+          btnCheckNow.innerHTML = '<span>⚡ Check Now</span>';
+          countdownSeconds = totalIntervalSeconds;
+          updateCountdownUI();
+        }
+      }
+
+      // Render Targets
+      function renderTargets() {
+        const targets = StorageManager.getWatchTargets();
+        targetsCountEl.textContent = targets.length;
+
+        if (targets.length === 0) {
+          targetsContainer.innerHTML = `
+            <div class="empty-state">
+              <div>📍 No search locations added.</div>
+              <button class="btn-text" id="btn-add-first-target">＋ Add Your ZIP Code</button>
+            </div>
+          `;
+          document.getElementById('btn-add-first-target')?.addEventListener('click', openAddTargetModal);
+          return;
+        }
+
+        targetsContainer.innerHTML = targets.map(t => {
+          const webUrl = TeslaApi.buildInventoryWebUrl(t);
+          const trimLabel = (TeslaApi.MODEL_Y_TRIMS[t.trim] || {}).label || t.trim;
+          const priceLabel = t.maxPrice ? `Under ${TeslaApi.formatCurrency(t.maxPrice)}` : 'Any Price';
+
+          return `
+            <div class="target-card ${t.enabled ? '' : 'disabled'}" data-id="${t.id}">
+              <div class="target-main-row">
+                <div class="target-zip-badge">
+                  <div class="zip-icon">📍</div>
+                  <div>
+                    <div class="zip-text">${t.zip}</div>
+                    <div class="range-text">${t.range} Miles Radius</div>
+                  </div>
+                </div>
+                <div>
+                  <label class="switch">
+                    <input type="checkbox" class="target-toggle" data-id="${t.id}" ${t.enabled ? 'checked' : ''}>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="target-filters">
+                <span class="filter-tag highlight">${trimLabel}</span>
+                <span class="filter-tag">${priceLabel}</span>
+                <span class="filter-tag" style="color: var(--accent-green);">${t.vehicleCount || 0} in Stock</span>
+              </div>
+
+              <div class="target-actions">
+                <a href="${webUrl}" target="_blank" rel="noopener noreferrer" class="target-link-btn">
+                  🌐 Open on Tesla.com ↗
+                </a>
+                <div class="target-btn-group">
+                  <button class="icon-btn btn-delete-target" data-id="${t.id}" title="Remove Location" style="width: 36px; height: 36px; font-size: 14px;">
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Attach listeners
+        targetsContainer.querySelectorAll('.target-toggle').forEach(el => {
+          el.addEventListener('change', (e) => {
+            const id = e.target.getAttribute('data-id');
+            StorageManager.toggleWatchTarget(id);
+            renderTargets();
+          });
+        });
+
+        targetsContainer.querySelectorAll('.btn-delete-target').forEach(el => {
+          el.addEventListener('click', (e) => {
+            const id = e.currentTarget.getAttribute('data-id');
+            if (confirm('Remove this search location?')) {
+              StorageManager.removeWatchTarget(id);
+              renderTargets();
+            }
+          });
+        });
+      }
+
+      // Render Vehicles
+      function renderVehicles() {
+        const vehicles = StorageManager.getLatestVehicles();
+        vehiclesCountEl.textContent = vehicles.length;
+
+        if (vehicles.length === 0) {
+          vehiclesContainer.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-radar">🚗</div>
+              <div style="font-weight: 700; font-size: 16px;">No Model Y Currently in Stock</div>
+              <div style="color: var(--text-muted); font-size: 13px; max-width: 380px;">
+                Tesla Watch is continuously monitoring your target zip codes and range. You will be alerted the moment one appears!
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        vehiclesContainer.innerHTML = vehicles.map(v => {
+          const discountTag = v.discount > 0
+            ? `<span class="vehicle-discount">Save ${TeslaApi.formatCurrency(v.discount)}</span>`
+            : '';
+
+          return `
+            <div class="vehicle-card" data-vin="${v.vin}">
+              <div class="vehicle-header">
+                <div class="vehicle-title">${v.trimName}</div>
+                <div class="vehicle-price-row">
+                  <div class="vehicle-price">${TeslaApi.formatCurrency(v.price)}</div>
+                  ${discountTag}
+                </div>
+              </div>
+
+              <div class="vehicle-specs">
+                <div class="spec-item">
+                  <span class="spec-label">Paint</span>
+                  <span class="spec-value">${v.paint}</span>
+                </div>
+                <div class="spec-item">
+                  <span class="spec-label">Location</span>
+                  <span class="spec-value">${v.location}</span>
+                </div>
+                <div class="spec-item">
+                  <span class="spec-label">Interior</span>
+                  <span class="spec-value">${v.interior}</span>
+                </div>
+                <div class="spec-item">
+                  <span class="spec-label">VIN / ID</span>
+                  <span class="spec-value" style="font-family: 'JetBrains Mono', monospace; font-size: 10px;">${v.vin.slice(-8)}</span>
+                </div>
+              </div>
+
+              <div class="vehicle-actions">
+                <a href="${v.directUrl}" target="_blank" rel="noopener noreferrer" class="btn-reserve">
+                  View & Reserve on Tesla.com ↗
+                </a>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Logs
+      function renderLogs() {
+        const logs = StorageManager.getScanLogs();
+        if (logs.length === 0) {
+          logsContainer.innerHTML = '<div style="color: var(--text-dim); text-align: center; padding: 10px;">No scan activity recorded yet.</div>';
+          return;
+        }
+
+        logsContainer.innerHTML = logs.slice(0, 15).map(l => {
+          const time = new Date(l.timestamp).toLocaleTimeString();
+          const hasNewClass = l.newCount > 0 ? 'has-new' : '';
+          return `
+            <div class="log-row ${hasNewClass}">
+              <span>[${time}] ZIP ${l.zip} (${l.range}mi)</span>
+              <span>${l.message}</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Interval Selector Handling
+      function updateIntervalSelectorUI(mins) {
+        document.querySelectorAll('.interval-option').forEach(btn => {
+          const btnMins = Number(btn.getAttribute('data-mins'));
+          if (btnMins === mins) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+      }
+
+      document.querySelectorAll('.interval-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mins = Number(btn.getAttribute('data-mins'));
+          StorageManager.saveSettings({ pollIntervalMinutes: mins });
+          totalIntervalSeconds = mins * 60;
+          countdownSeconds = totalIntervalSeconds;
+          updateIntervalSelectorUI(mins);
+          updateCountdownUI();
+        });
+      });
+
+      // Manual Check Now
+      btnCheckNow.addEventListener('click', () => {
+        NotificationEngine.initAudio(); // Initialize audio context on click gesture
+        triggerScan();
+      });
+
+      // Test Alert Sound
+      document.getElementById('btn-test-sound').addEventListener('click', () => {
+        NotificationEngine.initAudio();
+        NotificationEngine.playAlertSound();
+        NotificationEngine.triggerVibrate();
+      });
+
+      // Clear Logs
+      document.getElementById('btn-clear-logs').addEventListener('click', () => {
+        StorageManager.store?.removeItem(StorageManager.STORAGE_KEYS.SCAN_LOGS);
+        renderLogs();
+      });
+
+      // Modal Handling
+      function openAddTargetModal() {
+        modalAddTarget.classList.add('active');
+        document.getElementById('input-zip').focus();
+      }
+
+      function closeAddTargetModal() {
+        modalAddTarget.classList.remove('active');
+      }
+
+      btnOpenAddTarget.addEventListener('click', openAddTargetModal);
+      btnCloseTargetModal.addEventListener('click', closeAddTargetModal);
+
+      // Radius Pills in Modal
+      document.querySelectorAll('#radius-pills .pill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#radius-pills .pill-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById('input-range').value = btn.getAttribute('data-range');
+        });
+      });
+
+      // Save Target Form
+      document.getElementById('form-add-target').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const zip = document.getElementById('input-zip').value.trim();
+        const range = Number(document.getElementById('input-range').value) || 200;
+        const trim = document.getElementById('select-trim').value;
+        const maxPrice = document.getElementById('input-max-price').value;
+
+        if (!TeslaApi.isValidZip(zip)) {
+          alert('Please enter a valid 5-digit US ZIP code.');
+          return;
+        }
+
+        StorageManager.addWatchTarget({
+          zip: zip,
+          range: range,
+          trim: trim,
+          maxPrice: maxPrice ? Number(maxPrice) : null
+        });
+
+        closeAddTargetModal();
+        document.getElementById('input-zip').value = '';
+        renderTargets();
+        triggerScan();
+      });
+
+      // Settings Modal
+      btnOpenSettings.addEventListener('click', () => {
+        const settings = StorageManager.getSettings();
+        document.getElementById('input-ntfy-topic').value = settings.ntfyTopic || '';
+        document.getElementById('input-proxy-url').value = settings.proxyUrl || '';
+        updateNotificationStatusUI();
+        modalSettings.classList.add('active');
+      });
+
+      btnCloseSettingsModal.addEventListener('click', () => {
+        modalSettings.classList.remove('active');
+      });
+
+      document.getElementById('link-setup-push').addEventListener('click', (e) => {
+        e.preventDefault();
+        btnOpenSettings.click();
+      });
+
+      // Request Notification Permission
+      document.getElementById('btn-request-notifications').addEventListener('click', async () => {
+        const perm = await NotificationEngine.requestPermission();
+        updateNotificationStatusUI();
+        if (perm === 'granted') {
+          NotificationEngine.showNotification('Tesla Watcher Enabled', {
+            body: 'You will receive notifications when new Model Y cars are found!'
+          });
+        }
+      });
+
+      function updateNotificationStatusUI() {
+        const statusEl = document.getElementById('notification-perm-status');
+        const status = NotificationEngine.getPermissionStatus();
+        statusEl.textContent = `iOS Notification Status: ${status.toUpperCase()}`;
+        if (status === 'granted') {
+          statusEl.style.color = 'var(--accent-green)';
+        } else if (status === 'denied') {
+          statusEl.style.color = 'var(--tesla-red)';
+        } else {
+          statusEl.style.color = 'var(--text-dim)';
+        }
+      }
+
+      // Test Push Button
+      document.getElementById('btn-test-push').addEventListener('click', async () => {
+        const topic = document.getElementById('input-ntfy-topic').value.trim();
+        if (!topic) {
+          alert('Please enter an ntfy topic name first (e.g. my-tesla-94065-alerts)');
+          return;
+        }
+        const ok = await NotificationEngine.sendNtfyPush(
+          topic,
+          '🚗 Tesla Watch Test Alert',
+          'Lock-screen push notifications are working on your iPhone!'
+        );
+        alert(ok ? '✓ Test push sent! Check your phone.' : '✗ Push failed. Check your internet connection.');
+      });
+
+      // Save Settings
+      document.getElementById('btn-save-settings').addEventListener('click', () => {
+        const ntfyTopic = document.getElementById('input-ntfy-topic').value.trim();
+        const proxyUrl = document.getElementById('input-proxy-url').value.trim();
+
+        StorageManager.saveSettings({
+          ntfyTopic: ntfyTopic,
+          proxyUrl: proxyUrl
+        });
+
+        modalSettings.classList.remove('active');
+      });
+
+      // Close modal on background tap
+      [modalAddTarget, modalSettings].forEach(m => {
+        m.addEventListener('click', (e) => {
+          if (e.target === m) m.classList.remove('active');
+        });
+      });
+
+      // Run
+      init();
+    })();
+  </script>
+</body>
+</html>

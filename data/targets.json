@@ -1,0 +1,10 @@
+[
+  {
+    "id": "default-target-94065-200",
+    "zip": "94065",
+    "range": 200,
+    "trim": "ALL",
+    "maxPrice": null,
+    "enabled": true
+  }
+]
